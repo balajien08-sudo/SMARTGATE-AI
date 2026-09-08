@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from '../services/api.js';
 import { useToast } from './ToastContext.jsx';
+import { 
+  supabase, 
+  signInWithSupabase, 
+  signUpWithSupabase, 
+  signOutWithSupabase 
+} from '../services/supabaseClient.js';
 
 const AuthContext = createContext(null);
 
@@ -10,47 +15,58 @@ export function AuthProvider({ children }) {
   const { addToast } = useToast();
 
   useEffect(() => {
-    // Restore session from localStorage if available
-    const savedUser = localStorage.getItem('smartgate_user');
-    const savedToken = localStorage.getItem('smartgate_token');
-
-    if (savedUser && savedToken) {
-      try {
-        setUser(JSON.parse(savedUser));
-        // Verify with backend silently
-        authApi.getMe()
-          .then(res => {
-            if (res.success && res.user) {
-              setUser(res.user);
-              localStorage.setItem('smartgate_user', JSON.stringify(res.user));
-            }
-          })
-          .catch(() => {
-            // Token might be expired
-            logout(false);
-          });
-      } catch (e) {
-        logout(false);
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // Map Supabase user format to our app format
+        const appUser = {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+          email: session.user.email,
+          role: session.user.user_metadata?.role || 'Administrator'
+        };
+        setUser(appUser);
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    });
+
+    // Listen for changes on auth state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const appUser = {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+          email: session.user.email,
+          role: session.user.user_metadata?.role || 'Administrator'
+        };
+        setUser(appUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email, password) => {
     try {
-      const res = await authApi.login({ email, password });
-      if (res.success && res.token) {
-        localStorage.setItem('smartgate_token', res.token);
-        localStorage.setItem('smartgate_user', JSON.stringify(res.user));
-        setUser(res.user);
-        addToast({
-          type: 'success',
-          title: 'Login Successful',
-          message: `Welcome back, ${res.user.name} (${res.user.role})`
-        });
-        return { success: true };
-      }
-      return { success: false, message: res.message || 'Login failed' };
+      const data = await signInWithSupabase(email, password);
+      
+      const appUser = {
+        id: data.user.id,
+        name: data.user.user_metadata?.name || data.user.email.split('@')[0],
+        email: data.user.email,
+        role: data.user.user_metadata?.role || 'Administrator'
+      };
+      
+      setUser(appUser);
+      addToast({
+        type: 'success',
+        title: 'Login Successful',
+        message: `Welcome back, ${appUser.name}`
+      });
+      return { success: true };
     } catch (err) {
       addToast({
         type: 'error',
@@ -67,19 +83,22 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password, role) => {
     try {
-      const res = await authApi.register({ name, email, password, role });
-      if (res.success && res.token) {
-        localStorage.setItem('smartgate_token', res.token);
-        localStorage.setItem('smartgate_user', JSON.stringify(res.user));
-        setUser(res.user);
-        addToast({
-          type: 'success',
-          title: 'Account Created',
-          message: `Welcome to SmartGate AI, ${res.user.name}!`
-        });
-        return { success: true };
-      }
-      return { success: false, message: res.message || 'Registration failed' };
+      const data = await signUpWithSupabase(email, password, { name, role });
+      
+      const appUser = {
+        id: data.user.id,
+        name: data.user.user_metadata?.name || name,
+        email: data.user.email,
+        role: data.user.user_metadata?.role || role
+      };
+      
+      setUser(appUser);
+      addToast({
+        type: 'success',
+        title: 'Account Created',
+        message: `Welcome to SmartGate AI, ${appUser.name}!`
+      });
+      return { success: true };
     } catch (err) {
       addToast({
         type: 'error',
@@ -90,16 +109,19 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = (showToast = true) => {
-    localStorage.removeItem('smartgate_token');
-    localStorage.removeItem('smartgate_user');
-    setUser(null);
-    if (showToast) {
-      addToast({
-        type: 'info',
-        title: 'Session Ended',
-        message: 'You have been safely logged out.'
-      });
+  const logout = async (showToast = true) => {
+    try {
+      await signOutWithSupabase();
+      setUser(null);
+      if (showToast) {
+        addToast({
+          type: 'info',
+          title: 'Session Ended',
+          message: 'You have been safely logged out from Supabase.'
+        });
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
     }
   };
 

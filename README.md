@@ -37,10 +37,11 @@
 | :--- | :--- | :--- |
 | **Frontend** | React 18, Vite, JavaScript, CSS (Cyber Design System), React Router 6, Recharts, Lucide Icons | Responsive command center UI, CCTV HUD, dynamic charts, glassmorphic dashboards |
 | **Backend** | Node.js, Express.js (ESM), Socket.IO | High-throughput REST API, live telemetry broadcast, AI simulation engine |
-| **Database** | PostgreSQL (`pg`) with automatic in-memory resilient store fallback | Relational data persistence (Users, Gates, Telemetry readings, Alerts, Predictions, Audit logs) |
-| **Auth & Security** | JSON Web Tokens (JWT), Bcrypt password hashing | Role-Based Access Control (Administrator, Security Staff, Viewer) |
-| **Real-Time** | WebSocket / Socket.IO | 3.5s live telemetry ticks, anomaly alerts, instant scenario switches |
+| **Cloud & Database** | Supabase Cloud (PostgreSQL 15, Auth & Realtime) + PostgreSQL (`pg`) with in-memory fallback | Relational data persistence (Users, Gates, Telemetry readings, Alerts, Predictions, Audit logs) |
+| **Auth & Security** | Supabase Auth + JSON Web Tokens (JWT), Bcrypt password hashing | Role-Based Access Control (Administrator, Security Staff, Viewer) |
+| **Real-Time** | Supabase Realtime Channels & WebSocket / Socket.IO | 3.5s live telemetry ticks, anomaly alerts, instant scenario switches |
 | **AI / ML Layer** | Simulated YOLO-v8 Multi-Class Detector + Auto-Regressive Time-Series Engine | Inflow density scoring, 10m/30m/60m prediction horizons, conversational assistant |
+
 
 ---
 

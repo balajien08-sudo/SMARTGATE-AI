@@ -89,3 +89,9 @@ export const projectApi = {
   uploadPhoto: (photoData) => request('/project/photo', { method: 'POST', body: JSON.stringify(photoData) }),
   deletePhoto: () => request('/project/photo', { method: 'DELETE' })
 };
+
+// Supabase API
+export const supabaseApi = {
+  getStatus: () => request('/supabase/status')
+};
+

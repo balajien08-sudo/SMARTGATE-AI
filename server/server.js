@@ -16,6 +16,8 @@ import alertRoutes from './routes/alertRoutes.js';
 import gateRoutes from './routes/gateRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
+import supabaseRoutes from './routes/supabaseRoutes.js';
+import { testSupabaseServerConnection } from './database/supabase.js';
 
 import path from 'path';
 
@@ -77,6 +79,7 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/gates', gateRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/project', projectRoutes);
+app.use('/api/supabase', supabaseRoutes);
 
 // Socket.IO Event Handlers
 io.on('connection', (socket) => {
@@ -118,6 +121,15 @@ app.use(errorHandler);
 async function bootstrap() {
   try {
     await initDb();
+    
+    // Supabase Cloud Connectivity Check
+    const supabaseStatus = await testSupabaseServerConnection();
+    if (supabaseStatus.success) {
+      console.log(`⚡ Connected to Supabase Cloud (${supabaseStatus.projectUrl}) successfully.`);
+    } else {
+      console.warn(`⚠️ Supabase Cloud connection status: ${supabaseStatus.message}`);
+    }
+
     startSimulationLoop();
 
     server.listen(PORT, () => {
@@ -126,6 +138,7 @@ async function bootstrap() {
 🚦 SMARTGATE AI — Server Started Successfully!
 ==========================================================
 📡 API Server URL: http://localhost:${PORT}
+⚡ Supabase Cloud: ${supabaseStatus.success ? 'CONNECTED' : 'DISCONNECTED'} (${supabaseStatus.projectUrl})
 🔌 WebSocket (Socket.IO): Ready on port ${PORT}
 👤 Demo Admin Login: balajien08@gmail.com | 3329 (BALAJI EN)
 🚀 Simulation Engine: ACTIVE (Auto-broadcasting telemetry)

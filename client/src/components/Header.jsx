@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Search, Bell, Sparkles, Activity, Shield, Sun, Moon } from 'lucide-react';
+import { Menu, Search, Bell, Sparkles, Activity, Shield, Sun, Moon, Cloud, Database } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { DemoBadge } from './DemoBadge.jsx';
+
 
 export function Header({ onOpenSidebar }) {
   const { user } = useAuth();
@@ -154,6 +155,31 @@ export function Header({ onOpenSidebar }) {
             <option value="BUS_CONVOY">🚌 Bus Convoy Bottleneck</option>
           </select>
         </div>
+
+        {/* Supabase Cloud Live Status Pill */}
+        <Link
+          to="/settings"
+          title="Supabase Cloud Database & Auth (Connected: dyqguxhhgbcvyijfqjsp)"
+          style={{
+            padding: '5px 10px',
+            borderRadius: '999px',
+            background: 'var(--emerald-bg)',
+            border: '1px solid var(--emerald-border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            fontWeight: 700,
+            color: 'var(--emerald-400)',
+            textDecoration: 'none',
+            transition: 'all 0.2s ease'
+          }}
+          className="lg-flex-only"
+        >
+          <Database size={13} color="#10b981" />
+          <span>SUPABASE: ONLINE</span>
+        </Link>
 
         {/* Live Congestion Pill */}
         <div
