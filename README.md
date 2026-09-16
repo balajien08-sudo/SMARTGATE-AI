@@ -11,6 +11,12 @@
 
 **SmartGate AI** bridges this gap by combining computer vision vehicle telemetry, time-series forecasting, automated rule-based decision engines, and human-in-the-loop security action workflows.
 
+### New Features (Evidence-Based Enhancements)
+- **Field Observations**: Manual data entry for college gate traffic.
+- **Python YOLO Pipeline**: `ai/vehicle_detection.py` to run inference on sample footage and generate JSON results.
+- **Backend Data Modes**: Supports `real`, `mock`, and `demo` via `TRAFFIC_DATA_MODE` environment variable.
+- **Dynamic Dashboard**: Shows live data modes and data source indicators.
+
 ---
 
 ## 🏛️ 2. Real-World Problem & C29 Context
@@ -155,6 +161,14 @@ smartgate-ai/
 │   ├── package.json
 │   └── server.js
 │
+├── ai/                                     # Python YOLO Pipeline
+│   ├── vehicle_detection.py                # YOLOv8 inference script
+│   ├── requirements.txt
+│   ├── README.md
+│   ├── sample_video/                       # Place gate_video.mp4 here
+│   ├── output/                             # Annotated videos
+│   └── results/                            # JSON structured outputs
+│
 ├── .env.example
 ├── .gitignore
 ├── package.json                            # Root orchestration
@@ -181,13 +195,19 @@ cd ../client && npm install
 ```
 
 ### Step 2: Configure Environment Variables
-Copy `.env.example` into `server/.env`:
+Copy `.env.example` into `server/.env` (and root `.env`):
 ```bash
 PORT=5050
 JWT_SECRET=smartgate_ai_secure_jwt_secret_key_2026
 CLIENT_URL=http://localhost:5173
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartgate_ai # Optional
+TRAFFIC_DATA_MODE=mock # Options: real, mock, demo
 ```
+
+### Step 2.5: Supabase Setup (Optional but recommended)
+1. In your Supabase Dashboard, go to the SQL Editor.
+2. Copy the contents of `server/database/schema.sql`.
+3. Run the script to initialize tables: `traffic_readings`, `alerts`, `ai_predictions`, and `field_observations`.
 
 ### Step 3: Run Full-Stack Application
 To start both Backend API and Frontend Vite server concurrently:
@@ -206,6 +226,12 @@ Alternatively, in separate terminals:
   npm run client
   # Client starts on http://localhost:5173 or http://localhost:5174
   ```
+
+### Step 4: Python YOLO Setup
+1. `cd ai`
+2. `pip install -r requirements.txt`
+3. Place a sample video in `ai/sample_video/gate_video.mp4`
+4. Run inference: `python vehicle_detection.py --source sample_video/gate_video.mp4`
 
 ---
 
@@ -232,9 +258,11 @@ The database is pre-seeded with verified test accounts:
 
 ### Dashboard & Telemetry
 - `GET  /api/dashboard` — Live KPI metrics, status pill, active gates, sparklines
-- `GET  /api/traffic/live` — Simulated CCTV feed, bounding boxes, lane counts
+- `GET  /api/traffic/live` — Fetches real, mock, or demo telemetry based on `TRAFFIC_DATA_MODE`
 - `GET  /api/traffic/analytics?period=today|7d|30d` — 5 interactive chart datasets
 - `GET  /api/traffic/prediction` — Time-series forecast (10m, 30m, 60m)
+- `POST /api/traffic/inference` — Submit YOLO JSON output (Requires `vehicle_count`)
+- `GET  /api/traffic/observations` — Fetch field observations
 
 ### Alert Center
 - `GET   /api/alerts` — Filter alerts by severity (`Critical`, `Warning`, `Info`) and status (`Active`, `Acknowledged`, `Resolved`)

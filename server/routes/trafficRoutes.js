@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { getLiveTraffic, getTrafficAnalytics, getTrafficPrediction } from '../controllers/trafficController.js';
+import { 
+  getLiveTraffic, 
+  getTrafficAnalytics, 
+  getTrafficPrediction,
+  postInferenceData,
+  getObservations
+} from '../controllers/trafficController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -7,5 +13,7 @@ const router = Router();
 router.get('/live', authenticateToken, getLiveTraffic);
 router.get('/analytics', authenticateToken, getTrafficAnalytics);
 router.get('/prediction', authenticateToken, getTrafficPrediction);
+router.get('/observations', authenticateToken, getObservations);
+router.post('/inference', postInferenceData);
 
 export default router;

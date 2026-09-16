@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 
 import { initDb } from './database/db.js';
+import { verifySupabaseTables } from './database/init_tables.js';
 import { startSimulationLoop, setIoInstance, getCurrentTelemetry, setSimulationScenario } from './simulation/trafficSimulator.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -121,6 +122,7 @@ app.use(errorHandler);
 async function bootstrap() {
   try {
     await initDb();
+    await verifySupabaseTables();
     
     // Supabase Cloud Connectivity Check
     const supabaseStatus = await testSupabaseServerConnection();

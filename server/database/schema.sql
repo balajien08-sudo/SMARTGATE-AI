@@ -92,3 +92,20 @@ CREATE INDEX IF NOT EXISTS idx_traffic_timestamp ON traffic_readings(timestamp D
 CREATE INDEX IF NOT EXISTS idx_traffic_gate_id ON traffic_readings(gate_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_status ON alerts(status);
 CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts(created_at DESC);
+
+-- Field Observations Table
+CREATE TABLE IF NOT EXISTS field_observations (
+    id SERIAL PRIMARY KEY,
+    location VARCHAR(255) NOT NULL,
+    observation_date DATE NOT NULL,
+    duration_minutes INTEGER NOT NULL,
+    total_vehicles INTEGER NOT NULL,
+    max_queue_length INTEGER,
+    average_waiting_time NUMERIC(5,2),
+    peak_period VARCHAR(100),
+    notes TEXT,
+    photo_url TEXT,
+    video_reference TEXT,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

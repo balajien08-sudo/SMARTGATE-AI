@@ -2,14 +2,50 @@ import { memStore } from '../database/db.js';
 import { getCurrentTelemetry } from '../simulation/trafficSimulator.js';
 import { calculateCongestionMetrics } from '../ai/congestionModel.js';
 import { generateTrafficPredictions } from '../ai/predictionEngine.js';
+import { supabase } from '../database/supabase.js';
 
-export function getLiveTraffic(req, res, next) {
+// Global mock state for when TRAFFIC_DATA_MODE=mock or real (if real is offline)
+let mockInferenceState = {
+  vehicleCount: 25,
+  queueLength: 6,
+  waitingTime: 3.2,
+  congestionLevel: "Medium",
+  cars: 12,
+  motorcycles: 10,
+  buses: 2,
+  trucks: 1,
+  source: "structured mock inference",
+  isSimulated: true,
+  timestamp: new Date().toISOString()
+};
+
+export async function getLiveTraffic(req, res, next) {
   try {
     const telemetry = getCurrentTelemetry();
+    const mode = process.env.TRAFFIC_DATA_MODE || 'demo';
+
+    let telemetryData = {};
+    
+    if (mode === 'demo') {
+      telemetryData = { ...telemetry, source: "simulated demo", isSimulated: true, congestionLevel: "High" };
+    } else {
+      telemetryData = { ...mockInferenceState };
+    }
+
+    // Merge mock info with basic required fields if missing
+    telemetryData.vehicle_count = telemetryData.vehicleCount || telemetryData.vehicle_count || 47;
+    telemetryData.queue_length = telemetryData.queueLength || telemetryData.queue_length || 18;
+    telemetryData.waiting_time = telemetryData.waitingTime || telemetryData.waiting_time || 4.2;
+    telemetryData.buses = telemetryData.buses || 2;
+    telemetryData.cars = telemetryData.cars || 12;
+    telemetryData.bikes = telemetryData.motorcycles || 10;
+    telemetryData.vans = telemetryData.trucks || 1;
+    telemetryData.average_speed = telemetryData.average_speed || 20;
+
     const metrics = calculateCongestionMetrics({
-      vehicle_count: telemetry.vehicle_count,
-      queue_length: telemetry.queue_length,
-      average_speed: telemetry.average_speed,
+      vehicle_count: telemetryData.vehicle_count,
+      queue_length: telemetryData.queue_length,
+      average_speed: telemetryData.average_speed,
       arrival_rate: telemetry.arrival_rate,
       gate_capacity: 30
     });
@@ -17,10 +53,10 @@ export function getLiveTraffic(req, res, next) {
     // Generate dynamic simulated bounding boxes for camera view
     const boundingBoxes = [];
     const vehicleTypes = ['Car', 'Bike', 'Bus', 'Van'];
-    const totalBoxes = Math.min(10, Math.max(4, Math.floor(telemetry.vehicle_count / 5)));
+    const totalBoxes = Math.min(10, Math.max(4, Math.floor(telemetryData.vehicle_count / 5)));
 
     for (let i = 0; i < totalBoxes; i++) {
-      const type = i === 0 && telemetry.buses > 0 ? 'Bus' :
+      const type = i === 0 && telemetryData.buses > 0 ? 'Bus' :
                    i % 3 === 0 ? 'Bike' :
                    i % 4 === 0 ? 'Van' : 'Car';
       
@@ -29,7 +65,7 @@ export function getLiveTraffic(req, res, next) {
       const y = 160 + (i * 42) % 220;
       const width = type === 'Bus' ? 120 : type === 'Van' ? 80 : type === 'Car' ? 65 : 35;
       const height = type === 'Bus' ? 70 : type === 'Van' ? 55 : type === 'Car' ? 45 : 30;
-      const speed = +(telemetry.average_speed + (Math.random() * 4 - 2)).toFixed(1);
+      const speed = +(telemetryData.average_speed + (Math.random() * 4 - 2)).toFixed(1);
       const confidence = +(91 + Math.random() * 8).toFixed(1);
 
       boundingBoxes.push({
@@ -55,24 +91,26 @@ export function getLiveTraffic(req, res, next) {
           is_simulated: true,
           label: 'SIMULATED CAMERA FEED — AI BOUNDING BOX OVERLAY'
         },
-        telemetry,
+        telemetry: telemetryData,
         metrics,
         detections: boundingBoxes,
         lanes: [
           {
             lane_id: 1,
             name: 'Lane 1 (Heavy / Buses / Cars)',
-            vehicle_count: Math.ceil(telemetry.vehicle_count * 0.58),
-            status: telemetry.queue_length > 10 ? 'Congested' : 'Fluid'
+            vehicle_count: Math.ceil(telemetryData.vehicle_count * 0.58),
+            status: telemetryData.queue_length > 10 ? 'Congested' : 'Fluid'
           },
           {
             lane_id: 2,
             name: 'Lane 2 (2-Wheelers & Fast Pass)',
-            vehicle_count: Math.floor(telemetry.vehicle_count * 0.42),
+            vehicle_count: Math.floor(telemetryData.vehicle_count * 0.42),
             status: 'Fluid'
           }
         ],
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        mode,
+        source: telemetryData.source || 'simulated demo'
       }
     });
   } catch (err) {
@@ -173,22 +211,96 @@ export function getTrafficAnalytics(req, res, next) {
 export function getTrafficPrediction(req, res, next) {
   try {
     const telemetry = getCurrentTelemetry();
-    const predictions = generateTrafficPredictions(telemetry);
+    const mode = process.env.TRAFFIC_DATA_MODE || 'demo';
+    
+    // Prototype Rule-based prediction logic
+    let predictedLevel = "Low";
+    if (mockInferenceState.vehicleCount > 30 || mockInferenceState.queueLength > 10) {
+      predictedLevel = "High";
+    } else if (mockInferenceState.vehicleCount > 15 || mockInferenceState.queueLength > 5) {
+      predictedLevel = "Medium";
+    }
 
     res.json({
       success: true,
       data: {
-        telemetry,
-        predictions,
-        methodology: {
-          detectionModel: 'YOLO-v8 Architecture (Conceptual Simulated Inflow)',
-          forecastingModel: 'Auto-Regressive Time Series with Rush-Hour Pattern Matching',
-          anomalyDetector: 'Multi-variate Inflow Deceleration & Bus Convoy Filter'
+        telemetry: mode === 'demo' ? telemetry : mockInferenceState,
+        predictions: {
+          predictedLevel,
+          confidence: mode === 'real' ? 85 : 95
         },
-        disclaimer: 'SIMULATED AI PREDICTION — Experimental C29 Demo Pipeline'
+        methodology: {
+          detectionModel: 'Prototype prediction logic',
+          forecastingModel: 'Rule-based analysis based on current inference',
+          anomalyDetector: 'Multi-variate Inflow Thresholds'
+        },
+        disclaimer: mode === 'demo' ? 'SIMULATED AI PREDICTION' : 'PROTOTYPE PREDICTION LOGIC'
       }
     });
   } catch (err) {
     next(err);
   }
 }
+
+export async function postInferenceData(req, res, next) {
+  try {
+    const data = req.body;
+    
+    if (data.vehicle_count === undefined) {
+      return res.status(400).json({ success: false, message: 'Invalid payload: vehicle_count required.' });
+    }
+
+    const mode = process.env.TRAFFIC_DATA_MODE || 'demo';
+    
+    const inferenceData = {
+      vehicleCount: data.vehicle_count,
+      queueLength: data.queue_length || Math.floor(data.vehicle_count * 0.3),
+      waitingTime: data.waiting_time || (data.vehicle_count * 0.1).toFixed(1),
+      congestionLevel: data.vehicle_count > 30 ? 'High' : (data.vehicle_count > 15 ? 'Medium' : 'Low'),
+      cars: data.cars || 0,
+      motorcycles: data.motorcycles || 0,
+      buses: data.buses || 0,
+      trucks: data.trucks || 0,
+      source: data.source || (mode === 'real' ? 'YOLO inference' : 'structured mock inference'),
+      isSimulated: mode !== 'real',
+      timestamp: new Date().toISOString()
+    };
+
+    // Update global state for dashboard live API
+    mockInferenceState = { ...inferenceData };
+
+    // Save to Supabase
+    if (supabase) {
+      await supabase.from('traffic_readings').insert([{
+        vehicle_count: inferenceData.vehicleCount,
+        cars: inferenceData.cars,
+        motorcycles: inferenceData.motorcycles,
+        buses: inferenceData.buses,
+        trucks: inferenceData.trucks,
+        queue_length: inferenceData.queueLength,
+        waiting_time: inferenceData.waitingTime,
+        congestion_level: inferenceData.congestionLevel,
+        source: inferenceData.source,
+        is_simulated: inferenceData.isSimulated
+      }]);
+    }
+
+    res.json({ success: true, message: 'Inference data received.', data: inferenceData });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getObservations(req, res, next) {
+  try {
+    if (!supabase) {
+      return res.json({ success: true, data: [] });
+    }
+    const { data, error } = await supabase.from('field_observations').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+

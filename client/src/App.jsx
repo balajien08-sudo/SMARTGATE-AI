@@ -18,6 +18,8 @@ import { GateManagementPage } from './pages/GateManagementPage.jsx';
 import { SystemArchitecturePage } from './pages/SystemArchitecturePage.jsx';
 import { C29MethodologyPage } from './pages/C29MethodologyPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
+import { FieldObservationPage } from './pages/FieldObservationPage.jsx';
+import { TechnicalArtifactPage } from './pages/TechnicalArtifactPage.jsx';
 
 export function App() {
   return (
@@ -41,6 +43,8 @@ export function App() {
         <Route path="/gates" element={<GateManagementPage />} />
         <Route path="/architecture" element={<SystemArchitecturePage />} />
         <Route path="/c29-methodology" element={<C29MethodologyPage />} />
+        <Route path="/observations" element={<FieldObservationPage />} />
+        <Route path="/pipeline" element={<TechnicalArtifactPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
 

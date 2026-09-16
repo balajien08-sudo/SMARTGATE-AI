@@ -42,3 +42,4 @@ export function requireRole(roles = []) {
 }
 
 export { JWT_SECRET };
+

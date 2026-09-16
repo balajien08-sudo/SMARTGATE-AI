@@ -26,6 +26,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
 import { dashboardApi, alertApi } from '../services/api.js';
 import { StatCard } from '../components/StatCard.jsx';
+import { DataSourceBadge } from '../components/DataSourceBadge.jsx';
 import { DemoBadge } from '../components/DemoBadge.jsx';
 import { LoadingSpinner } from '../components/LoadingSpinner.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -129,10 +130,12 @@ export function DashboardPage() {
             <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>
               {getGreeting()}, {user?.name || 'BALAJI EN'}
             </h1>
-            <DemoBadge size="xs" />
+            <DataSourceBadge source={dashboardData?.telemetry?.source || 'simulated demo'} />
           </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: 0 }}>
-            Campus Gate Traffic Overview • College Main Entrance Command Node
+          <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: 0, marginTop: '8px', display: 'flex', gap: '16px' }}>
+            <span>Data Mode: {dashboardData?.telemetry?.mode?.toUpperCase() || 'DEMO'}</span>
+            <span>Inference Status: Connected</span>
+            <span>Last Updated: {dashboardData?.telemetry?.timestamp ? new Date(dashboardData.telemetry.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString()}</span>
           </p>
         </div>
 
@@ -264,7 +267,7 @@ export function DashboardPage() {
                 Continuous incoming telemetry buffer (Last 12 ticks)
               </p>
             </div>
-            <DemoBadge size="xs" />
+            <DataSourceBadge source={dashboardData?.telemetry?.source || 'simulated demo'} size="xs" />
           </div>
 
           <div style={{ height: '220px', width: '100%' }}>
@@ -395,7 +398,7 @@ export function DashboardPage() {
                 Active AI Intelligence Recommendation
               </h3>
             </div>
-            <DemoBadge size="xs" text="SIMULATED RECOM" />
+            <DataSourceBadge source={dashboardData?.telemetry?.source || 'simulated demo'} size="xs" />
           </div>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '13.5px', lineHeight: 1.6, marginBottom: '16px' }}>

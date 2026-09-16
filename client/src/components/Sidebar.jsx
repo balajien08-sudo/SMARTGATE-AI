@@ -13,7 +13,9 @@ import {
   LogOut,
   ShieldCheck,
   ChevronRight,
-  X
+  X,
+  Database,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DemoBadge } from './DemoBadge.jsx';
@@ -26,10 +28,12 @@ export function Sidebar({ isOpen, onClose }) {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Live Traffic', path: '/live-traffic', icon: Video, badge: 'LIVE' },
     { name: 'AI Traffic Analysis', path: '/ai-analysis', icon: BrainCircuit, highlight: true },
+    { name: 'Field Observations', path: '/observations', icon: Database },
     { name: 'Alert Center', path: '/alerts', icon: AlertTriangle },
     { name: 'Traffic Analytics', path: '/analytics', icon: BarChart3 },
     { name: 'Gate Management', path: '/gates', icon: DoorClosed },
     { name: 'System Architecture', path: '/architecture', icon: Network },
+    { name: 'AI Technical Pipeline', path: '/pipeline', icon: Layers },
     { name: 'C29 Methodology', path: '/c29-methodology', icon: GraduationCap, badge: 'C29' },
     { name: 'Settings & Profile', path: '/settings', icon: Settings }
   ];
