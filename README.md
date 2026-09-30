@@ -12,10 +12,29 @@
 **SmartGate AI** bridges this gap by combining computer vision vehicle telemetry, time-series forecasting, automated rule-based decision engines, and human-in-the-loop security action workflows.
 
 ### New Features (Evidence-Based Enhancements)
-- **Field Observations**: Manual data entry for college gate traffic.
+- **Field Observations**: Manual data entry for college gate traffic. Allows entering Date, Duration, Peak Time, Max Queue, etc.
 - **Python YOLO Pipeline**: `ai/vehicle_detection.py` to run inference on sample footage and generate JSON results.
-- **Backend Data Modes**: Supports `real`, `mock`, and `demo` via `TRAFFIC_DATA_MODE` environment variable.
-- **Dynamic Dashboard**: Shows live data modes and data source indicators.
+- **Backend Data Modes**: 
+  - **REAL FIELD DATA**: Actual observed values by human personnel on the ground.
+  - **AI INFERENCE**: Real AI model predictions derived from sample CCTV footage.
+  - **SIMULATED DEMO DATA**: Mock data to prototype UI interactions without real sensors.
+- **Dynamic Dashboard**: Shows live data modes, inference mode toggle, and data source indicators.
+- **JSON Inference**: Standardized structured JSON output for AI predictions.
+
+Example AI JSON output format:
+```json
+{
+  "timestamp": "2026-09-30T10:30:00",
+  "vehicle_count": 24,
+  "cars": 15,
+  "motorcycles": 7,
+  "buses": 1,
+  "trucks": 1,
+  "queue_length": 8,
+  "congestion_level": "Medium",
+  "prediction": "Increasing"
+}
+```
 
 ---
 
@@ -286,11 +305,11 @@ The database is pre-seeded with verified test accounts:
 
 ## 🛡️ 9. Responsible AI Principles
 
-1. **Human-in-the-Loop Governance**: AI generates recommendations; human security personnel always verify before opening/closing gates.
-2. **Privacy by Design**: No facial recognition or biometric driver identification is stored.
-3. **Data Minimization**: Only aggregate vehicle classifications (Cars, Bikes, Buses, Vans) and queue lengths are logged.
-4. **Transparent Demo Demarcation**: All simulated values and models are labeled with `DEMO / SIMULATED DATA` badges.
-5. **False Alarm Mitigation**: Multi-factor decision matrix prevents premature alarms.
+1. **Human-in-the-Loop Governance**: AI generates recommendations; human security personnel always verify before opening/closing gates. AI does NOT automatically control the college gate.
+2. **Privacy by Design**: No facial recognition or biometric driver identification is stored. Avoid exposing vehicle registration numbers.
+3. **Data Minimization**: Do not store unnecessary personal information. Use anonymized/processed video where possible. Only aggregate vehicle classifications and queue lengths are logged.
+4. **Transparent Demo Demarcation**: All simulated values and models are labeled with `DEMO / SIMULATED DATA` badges. Never present simulated data as real field data.
+5. **Validation and Accuracy**: Do not claim model accuracy or validate predictions without actual testing and field evidence. Predictions are prototype recommendations only.
 
 ---
 

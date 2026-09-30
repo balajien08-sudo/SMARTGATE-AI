@@ -91,6 +91,17 @@ def process_video(source, model_path):
     timestamp = datetime.now().isoformat()
     total = sum(total_counts.values())
     
+    # Simple Congestion Logic
+    if total < 10:
+        congestion_level = "Low"
+        queue_length = 2
+    elif total < 30:
+        congestion_level = "Medium"
+        queue_length = 8
+    else:
+        congestion_level = "High"
+        queue_length = 15
+        
     results_json = {
         "timestamp": timestamp,
         "vehicle_count": total,
@@ -98,6 +109,9 @@ def process_video(source, model_path):
         "motorcycles": total_counts['motorcycles'],
         "buses": total_counts['buses'],
         "trucks": total_counts['trucks'],
+        "queue_length": queue_length,
+        "congestion_level": congestion_level,
+        "prediction": "Increasing", # Prototype prediction
         "source": "YOLO sample inference",
         "is_simulated": False
     }

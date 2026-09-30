@@ -46,6 +46,9 @@ Example JSON output:
   "motorcycles": 10,
   "buses": 2,
   "trucks": 1,
+  "queue_length": 8,
+  "congestion_level": "Medium",
+  "prediction": "Increasing",
   "source": "YOLO sample inference",
   "is_simulated": false
 }
