@@ -2,6 +2,7 @@ import argparse
 import cv2
 import json
 import os
+import requests
 from datetime import datetime
 from ultralytics import YOLO
 
@@ -9,9 +10,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="YOLO Vehicle Detection for SMARTGATE AI")
     parser.add_argument('--source', type=str, help='Path to the sample video file', default=None)
     parser.add_argument('--model', type=str, default='yolov8n.pt', help='YOLO model to use (default: yolov8n.pt)')
+    parser.add_argument('--api-url', type=str, default=None, help='URL to post the inference results (e.g., http://localhost:5050/api/traffic/inference)')
     return parser.parse_args()
 
-def process_video(source, model_path):
+def process_video(source, model_path, api_url):
     if not source or not os.path.exists(source):
         print(f"Error: Could not find video source at '{source}'.")
         print("Please place a sample traffic video in 'ai/sample_video/' and run the script again.")
@@ -122,7 +124,19 @@ def process_video(source, model_path):
         
     print(f"Inference results saved to {json_path}")
     print(json.dumps(results_json, indent=2))
+    
+    if api_url:
+        print(f"Submitting inference to backend API: {api_url}")
+        try:
+            response = requests.post(api_url, json=results_json, headers={'Content-Type': 'application/json'})
+            if response.status_code == 200:
+                print("Successfully submitted inference results to backend!")
+            else:
+                print(f"Warning: Failed to submit to backend. Status code: {response.status_code}")
+                print(response.text)
+        except Exception as e:
+            print(f"Error submitting to backend: {e}")
 
 if __name__ == "__main__":
     args = parse_args()
-    process_video(args.source, args.model)
+    process_video(args.source, args.model, args.api_url)
