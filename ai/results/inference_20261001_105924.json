@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-10-01T10:59:24.050960",
+  "vehicle_count": 0,
+  "cars": 0,
+  "motorcycles": 0,
+  "buses": 0,
+  "trucks": 0,
+  "queue_length": 2,
+  "congestion_level": "Low",
+  "prediction": "Increasing",
+  "source": "YOLO sample inference",
+  "is_simulated": false
+}
