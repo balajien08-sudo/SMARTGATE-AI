@@ -15,13 +15,17 @@ def parse_args():
 
 def process_video(source, model_path, api_url):
     if not source or not os.path.exists(source):
-        print(f"Error: Could not find video source at '{source}'.")
+        print(f"Error: Input video not found: {source}")
         print("Please place a sample traffic video in 'ai/sample_video/' and run the script again.")
         print("Example: python vehicle_detection.py --source sample_video/gate_video.mp4")
         return
 
     print(f"Loading YOLO model: {model_path}")
-    model = YOLO(model_path)
+    try:
+        model = YOLO(model_path)
+    except Exception as e:
+        print(f"Error: Failed to load YOLO model from {model_path}. Error: {e}")
+        return
     
     # Class IDs for YOLOv8 (COCO dataset): 2: car, 3: motorcycle, 5: bus, 7: truck
     target_classes = [2, 3, 5, 7]
@@ -58,6 +62,8 @@ def process_video(source, model_path, api_url):
         results = model(frame, classes=target_classes, verbose=False)
         
         # Count vehicles in the current frame
+        # Ignore unsupported object classes so that the traffic count 
+        # represents only vehicle categories relevant to gate congestion.
         current_counts = {'cars': 0, 'motorcycles': 0, 'buses': 0, 'trucks': 0}
         
         for r in results:
@@ -69,7 +75,9 @@ def process_video(source, model_path, api_url):
                 elif cls_id == 5: current_counts['buses'] += 1
                 elif cls_id == 7: current_counts['trucks'] += 1
         
-        # Keep track of max vehicles detected in a single frame to represent 'total volume' in this naive implementation
+        # Keep track of max vehicles detected in a single frame to represent 'total volume' in this naive implementation.
+        # This is because we aren't tracking object IDs across frames (DeepSORT), so the max count 
+        # observed at any one time is a proxy for how many vehicles are waiting.
         total_counts['cars'] = max(total_counts['cars'], current_counts['cars'])
         total_counts['motorcycles'] = max(total_counts['motorcycles'], current_counts['motorcycles'])
         total_counts['buses'] = max(total_counts['buses'], current_counts['buses'])
@@ -90,10 +98,13 @@ def process_video(source, model_path, api_url):
     print(f"Processing complete. Annotated video saved to {output_path}")
     
     # Generate structured JSON
+    # This prepares the specific schema expected by the POST /api/traffic/inference endpoint
     timestamp = datetime.now().isoformat()
     total = sum(total_counts.values())
     
     # Simple Congestion Logic
+    # Calculates a basic congestion tier based purely on total volume.
+    # In a production system, this would be computed by the backend based on inflow rate vs clearance rate.
     if total < 10:
         congestion_level = "Low"
         queue_length = 2
@@ -128,14 +139,16 @@ def process_video(source, model_path, api_url):
     if api_url:
         print(f"Submitting inference to backend API: {api_url}")
         try:
-            response = requests.post(api_url, json=results_json, headers={'Content-Type': 'application/json'})
+            response = requests.post(api_url, json=results_json, headers={'Content-Type': 'application/json'}, timeout=10)
             if response.status_code == 200:
                 print("Successfully submitted inference results to backend!")
             else:
-                print(f"Warning: Failed to submit to backend. Status code: {response.status_code}")
+                print(f"Warning: Inference generated locally, but backend submission failed. Status: {response.status_code}")
                 print(response.text)
+        except requests.exceptions.RequestException as e:
+            print(f"Warning: Inference generated locally, but backend submission failed. Error: {e}")
         except Exception as e:
-            print(f"Error submitting to backend: {e}")
+            print(f"Warning: Inference generated locally, but backend submission failed. Unexpected Error: {e}")
 
 if __name__ == "__main__":
     args = parse_args()

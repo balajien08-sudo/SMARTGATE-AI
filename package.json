@@ -12,7 +12,8 @@
     "start": "npm --prefix server start"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0"

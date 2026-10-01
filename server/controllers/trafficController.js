@@ -249,6 +249,10 @@ export async function postInferenceData(req, res, next) {
     if (data.vehicle_count === undefined) {
       return res.status(400).json({ success: false, message: 'Invalid payload: vehicle_count required.' });
     }
+    
+    if (typeof data.vehicle_count !== 'number' || data.vehicle_count < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid payload: vehicle_count must be a non-negative number.' });
+    }
 
     const mode = process.env.TRAFFIC_DATA_MODE || 'demo';
     

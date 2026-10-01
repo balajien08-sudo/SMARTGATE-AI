@@ -21,6 +21,13 @@
 - **Dynamic Dashboard**: Shows live data modes, inference mode toggle, and data source indicators.
 - **JSON Inference**: Standardized structured JSON output for AI predictions.
 
+## Data Sources
+
+The application visualizes data from three primary origins:
+1. **REAL FIELD DATA**: Data manually recorded by human staff during observation periods.
+2. **AI INFERENCE**: Data processed via the Python YOLO pipeline from sample traffic footage.
+3. **DEMO / SIMULATED DATA**: Pre-configured mock data for UX/UI testing without active sensors.
+
 Example AI JSON output format:
 ```json
 {
@@ -72,41 +79,47 @@ Example AI JSON output format:
 
 ## 🏗️ 4. System Architecture
 
-```text
-COLLEGE GATE (Physical Environment)
-      ↓ (Raw Physical Traffic Flow)
-CAMERA / SENSOR DATA (Perception Layer)
-      ↓ (Raw Video Stream)
-DATA ACQUISITION (Ingestion Layer)
-      ↓ (Video Frames)
-PREPROCESSING (ROI Masking & Normalization)
-      ↓ (Processed Frames)
-AI VEHICLE DETECTION (YOLO-Based Multi-Class Object Detection)
-      ↓ (Detected Vehicle Bounding Boxes & Classes)
-VEHICLE COUNTING (Virtual Tripwire & Density Matrix)
-      ↓ (Lane Counts & Classified Stream)
-TRAFFIC PATTERN ANALYSIS (Velocity & Queue Estimation)
-      ↓ (Traffic Feature Vectors)
-TIME-SERIES PREDICTION (Auto-Regressive Rush Pattern Model)
-      ↓ (Forecast Horizon & Risk Probability)
-CONGESTION DECISION LOGIC (Composite Congestion Index 0–100)
-      ↓ (Congestion State: NORMAL, MODERATE, HIGH, CRITICAL)
-ALERT GENERATION (Event Dispatcher)
-      ↓ (Structured Alert Payload)
-DASHBOARD / UI (React Command Center)
-      ↓ (Visual Telemetry & Recommendations)
-SECURITY STAFF (Human Governance)
-      ↓ (Human Decision & Assessment)
-HUMAN VERIFICATION (Safety Verification Gate)
-      ↓ (Staff Confirmed Action Plan)
-TRAFFIC MANAGEMENT ACTION (Secondary Gate Open / Emergency Corridor)
-      ↓ (Closed-Loop Feedback)
-FEEDBACK & MODEL OPTIMIZATION (↺ Model Calibration)
-```
+- **Frontend**: React/Vite Dashboard.
+- **Backend**: Node.js/Express REST API serving as a central hub.
+- **AI**: Python YOLOv8 pipeline for object detection.
+- **Database**: PostgreSQL (via Supabase) and local memory fallback.
+- **Dashboard**: Command Center UI.
 
-> **Human-in-the-Loop Principle**: *“AI detects and recommends. Human staff verify and take action.”*
+## AI Pipeline
 
----
+The vehicle analysis lifecycle operates as follows:
+1. **Video**: Sample footage (e.g., `gate_video.mp4`).
+2. **YOLO**: Python execution using Ultralytics YOLOv8.
+3. **Vehicle Detection**: Bounding box extraction and filtering by target classes.
+4. **Vehicle Counting**: Frame-by-frame aggregation.
+5. **JSON**: Structured serialization.
+6. **API**: Submission to the Node.js backend.
+7. **Dashboard**: Live visualization of inference results.
+
+## Error Handling
+
+- **Frontend Error Boundaries**: React ErrorBoundary component catches unexpected rendering crashes.
+- **Backend Centralized Error Handling**: `errorHandler.js` formats unexpected API errors into safe, unified JSON structure without stack traces.
+- **YOLO Error Handling**: Checks for missing videos, failed model loads, and HTTP backend failures with clear terminal warnings.
+- **API Validation**: Traffic payload strict validation (e.g., missing or invalid `vehicle_count` returns 400).
+
+## Testing
+
+For complete testing details, refer to: [Testing Documentation](docs/testing.md).
+- **Setup**: Install Vitest (JS) and Pytest (Python).
+- **Execution**: Run `npm test` for backend, and `pytest` for AI.
+- **Coverage**: Includes critical traffic API validation and Python detection edge cases.
+
+## Database Schema
+
+For complete schema definitions and ER Diagram, refer to: [Database Schema Documentation](docs/database-schema.md).
+- **users**: Accounts.
+- **gates**: Physical gates.
+- **traffic_readings**: AI and manual telemetry.
+- **alerts**: System events.
+- **ai_predictions**: Future traffic forecasts.
+- **action_logs**: Audit trail.
+- **field_observations**: Manual records.
 
 ## 📂 5. Project File Structure
 
@@ -268,38 +281,44 @@ The database is pre-seeded with verified test accounts:
 
 ---
 
-## 📡 8. REST API Endpoints
+## 📡 8. API Reference
 
-### Authentication
-- `POST /api/auth/register` — Register new security operator
-- `POST /api/auth/login` — Authenticate and receive JWT token
-- `GET  /api/auth/me` — Get current logged-in operator details
+For detailed endpoints, here are the core existing implementations:
 
-### Dashboard & Telemetry
-- `GET  /api/dashboard` — Live KPI metrics, status pill, active gates, sparklines
-- `GET  /api/traffic/live` — Fetches real, mock, or demo telemetry based on `TRAFFIC_DATA_MODE`
-- `GET  /api/traffic/analytics?period=today|7d|30d` — 5 interactive chart datasets
-- `GET  /api/traffic/prediction` — Time-series forecast (10m, 30m, 60m)
-- `POST /api/traffic/inference` — Submit YOLO JSON output (Requires `vehicle_count`)
-- `GET  /api/traffic/observations` — Fetch field observations
+### POST /api/traffic/inference
+Purpose: Submit structured YOLO traffic inference results.
+Request:
+```json
+{
+  "vehicle_count": 10,
+  "cars": 5,
+  "motorcycles": 4,
+  "buses": 1,
+  "source": "gate_video.mp4"
+}
+```
+Success:
+```json
+{
+  "success": true,
+  "message": "Inference data received."
+}
+```
+Errors:
+- 400 – Invalid payload: vehicle_count required or invalid.
+- 500 – Server error.
 
-### Alert Center
-- `GET   /api/alerts` — Filter alerts by severity (`Critical`, `Warning`, `Info`) and status (`Active`, `Acknowledged`, `Resolved`)
-- `PATCH /api/alerts/:id` — Acknowledge or Resolve alert
-- `POST  /api/alerts` — Trigger simulated test alert
+### GET /api/traffic/live
+Purpose: Fetch real, mock, or demo telemetry based on server mode.
 
-### Gate Management
-- `GET   /api/gates` — Retrieve operational statuses for all gates
-- `PATCH /api/gates/:id` — Actuate gate (`Open`, `Closed`, `Available`)
-- `GET   /api/gates/logs` — Retrieve security action audit trail
+### GET /api/traffic/observations
+Purpose: Fetch field observations.
 
-### AI Assistant & Insights
-- `GET  /api/ai/insights` — YOLO detection stats & AI insight cards
-- `POST /api/ai/chat` — Conversational assistant linked to live telemetry
+### POST /api/auth/login
+Purpose: Authenticate operator.
 
-### C29 Project Methodology
-- `GET   /api/project` — Field observation, 5 Whys, stakeholders, solutions comparison
-- `PATCH /api/project/field-numbers` — Edit 3 Field numbers during viva presentation
+### POST /api/alerts
+Purpose: Create system alert.
 
 ---
 
